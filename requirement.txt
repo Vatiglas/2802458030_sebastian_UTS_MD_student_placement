@@ -1,0 +1,8 @@
+streamlit
+pandas
+scikit-learn==1.2.2
+joblib
+numpy<2.0.0
+fastapi
+uvicorn
+pydantic
