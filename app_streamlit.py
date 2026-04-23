@@ -20,7 +20,7 @@ def load_artifacts():
 
 art = load_artifacts()
 
-st.title("🎓 Student Placement & Salary Prediction")
+st.title("Student Placement & Salary Prediction")
 st.write("Masukkan data akademik mahasiswa di bawah ini untuk memprediksi peluang kerja.")
 
 # Form Input
