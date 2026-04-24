@@ -57,14 +57,15 @@ with st.form("input_form"):
     submitted = st.form_submit_button("Predict Result")
 
 if submitted:
+
     input_df = pd.DataFrame([{
         'cgpa': cgpa, 'tenth_percentage': tenth, 'twelfth_percentage': twelfth,
-        'attendance_percentage': attendance, 'backlogs': backlogs, # Baru
+        'attendance_percentage': attendance, 'backlogs': backlogs,
         'coding_skill_rating': coding, 'communication_skill_rating': comm, 'aptitude_skill_rating': apt,
-        'certifications_count': certs, 'hackathons_participated': hacks, # Baru
+        'certifications_count': certs, 'hackathons_participated': hacks,
         'projects_completed': projects, 'internships_completed': internships,
         'study_hours_per_day': study_h, 'sleep_hours': sleep_h,
-        'stress_level': stress_level, # Baru
+        'stress_level': stress_level,
         'family_income_level': income, 'city_tier': city, 'extracurricular_involvement': extra,
         'gender': gender, 'branch': branch, 'part_time_job': part_time, 'internet_access': internet
     }])
@@ -76,24 +77,40 @@ if submitted:
 
     df_proc = input_df.copy()
     
-    df_proc[art["ord_enc"].feature_names_in_] = art["ord_enc"].transform(df_proc[art["ord_enc"].feature_names_in_])
+    known_ord_cols = [col for col in art["ord_enc"].feature_names_in_ if col in df_proc.columns]
+    if known_ord_cols:
+        df_proc[known_ord_cols] = art["ord_enc"].transform(df_proc[known_ord_cols])
     
-    ohe_data = art["ohe"].transform(df_proc[['gender', 'branch', 'part_time_job', 'internet_access']])
-    df_final = pd.concat([df_proc.drop(columns=['gender', 'branch', 'part_time_job', 'internet_access']), 
-                          pd.DataFrame(ohe_data, columns=art["ohe"].get_feature_names_out())], axis=1)
+
+    ohe_cols = ['gender', 'branch', 'part_time_job', 'internet_access']
+    ohe_data = art["ohe"].transform(df_proc[ohe_cols])
+    df_final = pd.concat([
+        df_proc.drop(columns=ohe_cols), 
+        pd.DataFrame(ohe_data, columns=art["ohe"].get_feature_names_out())
+    ], axis=1)
     
     df_final = df_final[art["scaler"].feature_names_in_]
+    
+    mapping_manual = {
+        'Low': 0, 'Medium': 1, 'High': 2, 'None': 0, 
+        'Tier 3': 0, 'Tier 2': 1, 'Tier 1': 2
+    }
+    for col in df_final.columns:
+        if df_final[col].dtype == 'object': 
+            df_final[col] = df_final[col].replace(mapping_manual)
+            df_final[col] = pd.to_numeric(df_final[col], errors='coerce').fillna(0)
     
     scaled_data = art["scaler"].transform(df_final)
 
     status_enc = art["clf"].predict(scaled_data)[0]
     status = art["le"].inverse_transform([status_enc])[0]
     
+    st.divider()
     if status == 'Placed':
         salary = art["reg"].predict(scaled_data)[0]
         st.balloons()
-        st.success(f"###Status: {status}")
+        st.success(f"### Status: {status}")
         st.metric("Estimated Salary (LPA)", f"{salary:.2f}")
     else:
-        st.error(f"###Status: {status}")
-        st.write("Saran: Tingkatkan skill coding dan perbanyak project.")
+        st.error(f"### Status: {status}")
+        st.info("Saran: Tingkatkan skill coding dan perbanyak project portofolio.")
