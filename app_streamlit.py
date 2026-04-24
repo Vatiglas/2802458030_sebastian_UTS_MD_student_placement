@@ -108,7 +108,6 @@ if submitted:
     st.divider()
     if status == 'Placed':
         salary = art["reg"].predict(scaled_data)[0]
-        st.balloons()
         st.success(f"### Status: {status}")
         st.metric("Estimated Salary (LPA)", f"{salary:.2f}")
     else:
